@@ -1,0 +1,161 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pathfinder
+      POSTGRES_PASSWORD: pathfinder
+      POSTGRES_DB: pathfinder
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pathfinder"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "16379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "18000:8000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 192.168.1.1
+    dns_search:
+      - POCONNOR.com
+    environment:
+      DATABASE_URL: postgresql://pathfinder:pathfinder@postgres:5432/pathfinder
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: pathfinder-raw
+      MLFLOW_TRACKING_URI: http://mlflow:5001
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-32-byte-hex}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    dns:
+      - 192.168.1.1
+    dns_search:
+      - POCONNOR.com
+    environment:
+      DATABASE_URL: postgresql://pathfinder:pathfinder@postgres:5432/pathfinder
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: pathfinder-raw
+      MLFLOW_TRACKING_URI: http://mlflow:5001
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-32-byte-hex}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: celery -A app.workers worker --loglevel=info
+
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "15555:5555"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+      - celery_worker
+    command: celery -A app.workers flower --port=5555
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.3
+    ports:
+      - "15001:5001"
+    volumes:
+      - mlflow_data:/mlflow
+    command: mlflow server --host 0.0.0.0 --port 5001 --default-artifact-root /mlflow/artifacts --backend-store-uri sqlite:////mlflow/mlflow.db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "13000:80"
+    depends_on:
+      - backend
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "19090:9090"
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "13001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana:/etc/grafana/provisioning/dashboards
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  mlflow_data:
+  prometheus_data:
+  grafana_data:

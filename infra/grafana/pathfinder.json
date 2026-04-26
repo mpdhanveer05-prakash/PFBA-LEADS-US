@@ -1,0 +1,104 @@
+{
+  "title": "Pathfinder Overview",
+  "uid": "pathfinder-main",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "API Request Rate (req/s)",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "rate(http_requests_total{job=\"pathfinder-backend\"}[1m])",
+        "legendFormat": "req/s"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } } }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "API Error Rate",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "rate(http_requests_total{job=\"pathfinder-backend\",status=~\"5..\"}[1m])",
+        "legendFormat": "errors/s"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.1 }] } } }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "P95 Response Time (ms)",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"pathfinder-backend\"}[5m])) * 1000",
+        "legendFormat": "p95 ms"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 2000 }] } } }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Celery Active Tasks",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "targets": [{
+        "expr": "flower_events_total{job=\"pathfinder-backend\"}",
+        "legendFormat": "tasks"
+      }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } } }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "API Request Rate Over Time",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [{
+        "expr": "rate(http_requests_total{job=\"pathfinder-backend\"}[1m])",
+        "legendFormat": "{{method}} {{handler}}"
+      }],
+      "fieldConfig": { "defaults": { "unit": "reqps", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Response Time Percentiles",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"pathfinder-backend\"}[5m])) * 1000", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"pathfinder-backend\"}[5m])) * 1000", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"pathfinder-backend\"}[5m])) * 1000", "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Scraper Runs",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [{
+        "expr": "increase(http_requests_total{job=\"pathfinder-backend\",handler=\"/api/counties\"}[1h])",
+        "legendFormat": "scraper triggers"
+      }],
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2 } } }
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Top Slowest Endpoints",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "targets": [{
+        "expr": "topk(10, histogram_quantile(0.95, sum by (handler) (rate(http_request_duration_seconds_bucket{job=\"pathfinder-backend\"}[5m]))) * 1000)",
+        "legendFormat": "{{handler}}",
+        "instant": true,
+        "format": "table"
+      }],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+.env
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+node_modules/
+.vite/
+*.egg-info/
+.ruff_cache/
+mlruns/
+mlflow.db
