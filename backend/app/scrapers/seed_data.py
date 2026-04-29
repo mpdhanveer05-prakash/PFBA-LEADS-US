@@ -328,6 +328,33 @@ COUNTY_CONFIGS = {
         "price_per_sqft_range": (120, 400),
         "assessed_ratio_range": (0.75, 1.40),
     },
+    "bastrop_tx": {
+        "state": "TX",
+        "cities": ["Bastrop", "Elgin", "Smithville", "Cedar Creek", "McDade"],
+        "zip_prefixes": ["786"],
+        "lat_range": (29.90, 30.35),
+        "lng_range": (-97.45, -96.85),
+        "price_per_sqft_range": (140, 310),
+        "assessed_ratio_range": (0.82, 1.32),
+    },
+    "hays_tx": {
+        "state": "TX",
+        "cities": ["San Marcos", "Kyle", "Buda", "Wimberley", "Dripping Springs"],
+        "zip_prefixes": ["786", "787"],
+        "lat_range": (29.80, 30.25),
+        "lng_range": (-98.20, -97.75),
+        "price_per_sqft_range": (165, 350),
+        "assessed_ratio_range": (0.80, 1.30),
+    },
+    "duval_fl": {
+        "state": "FL",
+        "cities": ["Jacksonville", "Jacksonville Beach", "Atlantic Beach", "Orange Park", "Ponte Vedra"],
+        "zip_prefixes": ["322"],
+        "lat_range": (30.05, 30.55),
+        "lng_range": (-82.00, -81.30),
+        "price_per_sqft_range": (130, 300),
+        "assessed_ratio_range": (0.80, 1.38),
+    },
 }
 
 PROPERTY_TYPES = ["RESIDENTIAL"] * 7 + ["COMMERCIAL"] * 2 + ["INDUSTRIAL"]

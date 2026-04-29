@@ -23,6 +23,8 @@ _ADAPTER_MAP: dict[str, str] = {
     "denton_tx":      "app.scrapers.tx_denton.DentonCountyScraper",
     "williamson_tx":  "app.scrapers.tx_williamson.WilliamsonCountyScraper",
     "montgomery_tx":  "app.scrapers.tx_montgomery.MontgomeryCountyScraper",
+    "bastrop_tx":     "app.scrapers.tx_bastrop.BastropCountyScraper",
+    "hays_tx":        "app.scrapers.tx_hays.HaysCountyScraper",
     # Florida — FL Property Appraiser PApublicServiceProxy API
     "miami_dade_fl":   "app.scrapers.fl_miami_dade.MiamiDadeScraper",
     "broward_fl":      "app.scrapers.fl_broward.BrowardCountyScraper",
@@ -30,6 +32,7 @@ _ADAPTER_MAP: dict[str, str] = {
     "hillsborough_fl": "app.scrapers.fl_hillsborough.HillsboroughCountyScraper",
     "orange_fl":       "app.scrapers.fl_orange.OrangeCountyFLScraper",
     "pinellas_fl":     "app.scrapers.fl_pinellas.PinellasCountyScraper",
+    "duval_fl":        "app.scrapers.fl_duval.DuvalCountyScraper",
     # California — ArcGIS open-data FeatureServer
     "san_diego_ca":    "app.scrapers.ca_san_diego.SanDiegoScraper",
     "los_angeles_ca":  "app.scrapers.ca_los_angeles.LosAngelesCountyScraper",

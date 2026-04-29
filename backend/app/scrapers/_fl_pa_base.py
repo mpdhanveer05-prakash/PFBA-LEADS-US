@@ -33,6 +33,8 @@ class FLPropertyAppraiserScraper(BaseCountyScraper):
     _API: str = ""
     _STREETS: list[str] = []
     _CITY: str = ""
+    # FL county PA sites commonly have cert mismatches or self-signed certs
+    _VERIFY_SSL: bool = False
 
     # ------------------------------------------------------------------
     # Public interface

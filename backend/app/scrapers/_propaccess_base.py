@@ -34,6 +34,8 @@ class PropAccessScraper(BaseCountyScraper):
     _ZIPS: list[str] = []
     _STATE: str = "TX"
     _CID: int | None = None
+    # Many Texas CAD PropAccess portals use self-signed or mismatched certs
+    _VERIFY_SSL: bool = False
 
     # ------------------------------------------------------------------
     # Public interface

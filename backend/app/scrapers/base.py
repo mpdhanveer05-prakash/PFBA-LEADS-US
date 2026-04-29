@@ -69,6 +69,8 @@ _CIRCUIT_BREAK_AFTER = 2  # fail fast after this many consecutive transport erro
 
 class BaseCountyScraper(abc.ABC):
     adapter_name: str = ""
+    # Set to False in subclasses whose government sites have cert mismatches
+    _VERIFY_SSL: bool = True
 
     def __init__(self, county: County, db: Session) -> None:
         self.county = county
@@ -76,8 +78,17 @@ class BaseCountyScraper(abc.ABC):
         self._transport_errors = 0  # consecutive network failures
         self._client = httpx.Client(
             timeout=30,
-            headers={"User-Agent": "Pathfinder/1.0 (+https://pathfinder.example.com)"},
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/124.0.0.0 Safari/537.36"
+                ),
+                "Accept": "text/html,application/xhtml+xml,application/json,*/*;q=0.9",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
             follow_redirects=True,
+            verify=self._VERIFY_SSL,
         )
 
     def __del__(self) -> None:

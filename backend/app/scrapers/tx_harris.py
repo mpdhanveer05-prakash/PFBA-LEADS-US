@@ -24,8 +24,9 @@ from app.schemas.property import PropertyCreate
 
 logger = logging.getLogger(__name__)
 
-_SEARCH_URL = "https://public.hcad.org/records/searchval.asp"
-_DETAIL_URL = "https://public.hcad.org/records/details.asp"
+_BASE = "https://public.hcad.org"
+_SEARCH_URL = f"{_BASE}/records/searchval.asp"
+_DETAIL_URL = f"{_BASE}/records/details.asp"
 
 # Major Houston zip codes covering highest appeal-potential areas
 _HOUSTON_ZIPS = [
@@ -46,6 +47,7 @@ _HOUSTON_ZIPS = [
 
 class HarrisCountyScraper(BaseCountyScraper):
     adapter_name = "harris_tx"
+    _VERIFY_SSL = False
 
     def run(self, limit: int = 500) -> dict:
         records_fetched = 0
@@ -95,9 +97,9 @@ class HarrisCountyScraper(BaseCountyScraper):
                     },
                     headers={
                         "Content-Type": "application/x-www-form-urlencoded",
-                        "User-Agent": "Pathfinder/1.0 (+https://pathfinder.example.com)",
+                        "Referer": f"{_BASE}/records/index.asp",
+                        "Origin": _BASE,
                     },
-                    follow_redirects=True,
                     timeout=30,
                 )
                 resp.raise_for_status()

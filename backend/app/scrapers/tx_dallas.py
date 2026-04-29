@@ -12,6 +12,7 @@ from app.scrapers._propaccess_base import PropAccessScraper
 class DallasCountyScraper(PropAccessScraper):
     adapter_name = "dallas_tx"
 
+    # DCAD PropAccess portal — if this 404s, check https://www.dallascad.org for current URL
     _API = "https://propaccess.dallascad.org/clientdb"
     _STATE = "TX"
     _CID = None
