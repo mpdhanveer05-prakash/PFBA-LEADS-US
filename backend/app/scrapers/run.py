@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--county", required=True, help="County adapter slug, e.g. travis_tx")
+    parser.add_argument("--limit", type=int, default=500, help="Max records to fetch (default 500)")
     args = parser.parse_args()
 
     db = SessionLocal()
@@ -30,7 +31,7 @@ def main() -> None:
             return
 
         scraper = scraper_cls(county=county, db=db)
-        result = scraper.run()
+        result = scraper.run(limit=args.limit)
         repo.update_last_scraped(county.id)
         logger.info("Done: %s", result)
     finally:
