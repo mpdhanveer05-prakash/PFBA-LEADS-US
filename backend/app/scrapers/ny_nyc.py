@@ -69,9 +69,9 @@ class NYCCountyScraper(BaseCountyScraper):
                 resp = self.fetch(
                     _API,
                     params={
-                        "$select": "bbl,address,zipcode,assesstot,assessland,yearbuilt,bldgarea,ownername,latitude,longitude,bldgclass,borocode",
-                        "$where": "assesstot>'100000' AND latitude IS NOT NULL",
-                        "$order": "bbl",
+                        "$select": "bbl,address,zipcode,assesstot,assessland,yearbuilt,bldgarea,ownername,latitude,longitude,bldgclass,borocode,lotarea,numfloors,unitsres",
+                        "$where": "assesstot>'1000000' AND latitude IS NOT NULL",
+                        "$order": "assesstot DESC",
                         "$limit": page_size,
                         "$offset": offset,
                     },
@@ -125,6 +125,8 @@ class NYCCountyScraper(BaseCountyScraper):
         except (TypeError, ValueError):
             pass
 
+        owner_name = str(row.get("ownername") or "").strip().title() or None
+
         return {
             "apn": bbl,
             "address": address,
@@ -133,8 +135,11 @@ class NYCCountyScraper(BaseCountyScraper):
             "zip": zip_code,
             "property_type": prop_type,
             "building_sqft": to_int(row.get("bldgarea")),
+            "lot_size_sqft": to_int(row.get("lotarea")),
             "year_built": to_int(row.get("yearbuilt")),
-            "owner_name": str(row.get("ownername") or "").strip().title() or None,
+            "owner_name": owner_name,
+            "owner_email": None,
+            "owner_phone": None,
             "assessed_total": assessed_total,
             "assessed_land": to_decimal(row.get("assessland")),
             "assessed_improvement": None,
@@ -157,8 +162,11 @@ class NYCCountyScraper(BaseCountyScraper):
                 zip=raw_data.get("zip", ""),
                 property_type=raw_data.get("property_type", "RESIDENTIAL"),
                 building_sqft=raw_data.get("building_sqft"),
+                lot_size_sqft=raw_data.get("lot_size_sqft"),
                 year_built=raw_data.get("year_built"),
                 owner_name=raw_data.get("owner_name"),
+                owner_email=raw_data.get("owner_email"),
+                owner_phone=raw_data.get("owner_phone"),
                 latitude=raw_data.get("latitude"),
                 longitude=raw_data.get("longitude"),
             ),

@@ -70,7 +70,8 @@ class CookCountyScraper(BaseCountyScraper):
                     _ASMT_URL,
                     params={
                         "$select": "pin,year,mailed_tot,mailed_land,mailed_bldg",
-                        "$where": f"year='{_ASMT_YEAR}' AND mailed_tot>'0'",
+                        "$where": f"year='{_ASMT_YEAR}' AND mailed_tot>'500000'",
+                        "$order": "mailed_tot DESC",
                         "$limit": page_size,
                         "$offset": offset,
                     },

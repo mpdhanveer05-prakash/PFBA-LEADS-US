@@ -74,8 +74,8 @@ class SanFranciscoCountyScraper(BaseCountyScraper):
                     _API,
                     params={
                         "$select": "parcel_number,property_location,assessed_land_value,assessed_improvement_value,year_property_built,the_geom,property_class_code_definition,closed_roll_year",
-                        "$where": f"closed_roll_year='{_YEAR}' AND assessed_improvement_value>'10000'",
-                        "$order": "parcel_number",
+                        "$where": f"closed_roll_year='{_YEAR}' AND assessed_improvement_value>'500000'",
+                        "$order": "assessed_improvement_value DESC",
                         "$limit": page_size,
                         "$offset": offset,
                     },

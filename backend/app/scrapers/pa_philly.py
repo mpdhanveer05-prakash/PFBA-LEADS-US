@@ -62,8 +62,9 @@ class PhillyCountyScraper(BaseCountyScraper):
                 resp = self.fetch(
                     _API,
                     params={
-                        "$select": "parcel_number,location,zip_code,market_value,taxable_land,taxable_building,year_built,total_livable_area,owner_1,number_of_bedrooms,number_of_bathrooms,category_code_description",
-                        "$where": "market_value>'50000' AND location IS NOT NULL",
+                        "$select": "parcel_number,location,zip_code,market_value,taxable_land,taxable_building,year_built,total_livable_area,owner_1,owner_2,number_of_bedrooms,number_of_bathrooms,category_code_description,mailing_address_1,mailing_address_2,mailing_care_of,mailing_city_state,mailing_zip",
+                        "$where": "market_value>'300000' AND location IS NOT NULL",
+                        "$order": "market_value DESC",
                         "$limit": page_size,
                         "$offset": offset,
                     },
@@ -103,6 +104,20 @@ class PhillyCountyScraper(BaseCountyScraper):
         else:
             prop_type = "RESIDENTIAL"
 
+        # Owner name — combine owner_1 + owner_2 if both present
+        o1 = str(row.get("owner_1") or "").strip().title()
+        o2 = str(row.get("owner_2") or "").strip().title()
+        owner_name = f"{o1} & {o2}" if o1 and o2 else (o1 or o2 or None)
+
+        # Mailing address — where tax bills are sent (useful for outreach)
+        mail_line1 = str(row.get("mailing_address_1") or "").strip()
+        mail_line2 = str(row.get("mailing_address_2") or "").strip()
+        mail_care  = str(row.get("mailing_care_of") or "").strip()
+        mail_city  = str(row.get("mailing_city_state") or "").strip()
+        mail_zip   = str(row.get("mailing_zip") or "").strip()
+        mailing_parts = [p for p in [mail_care, mail_line1, mail_line2, mail_city, mail_zip] if p]
+        mailing_address = ", ".join(mailing_parts) if mailing_parts else None
+
         return {
             "apn": apn,
             "address": address,
@@ -111,8 +126,13 @@ class PhillyCountyScraper(BaseCountyScraper):
             "zip": zip_code,
             "property_type": prop_type,
             "building_sqft": to_int(row.get("total_livable_area")),
+            "bedrooms": to_int(row.get("number_of_bedrooms")),
+            "bathrooms": to_int(row.get("number_of_bathrooms")),
             "year_built": to_int(row.get("year_built")),
-            "owner_name": str(row.get("owner_1") or "").strip().title() or None,
+            "owner_name": owner_name,
+            "owner_email": None,
+            "owner_phone": None,
+            "mailing_address": mailing_address,
             "assessed_total": assessed_total,
             "assessed_land": to_decimal(row.get("taxable_land")),
             "assessed_improvement": to_decimal(row.get("taxable_building")),
@@ -136,7 +156,11 @@ class PhillyCountyScraper(BaseCountyScraper):
                 property_type=raw_data.get("property_type", "RESIDENTIAL"),
                 building_sqft=raw_data.get("building_sqft"),
                 year_built=raw_data.get("year_built"),
+                bedrooms=raw_data.get("bedrooms"),
+                bathrooms=raw_data.get("bathrooms"),
                 owner_name=raw_data.get("owner_name"),
+                owner_email=raw_data.get("owner_email"),
+                owner_phone=raw_data.get("owner_phone"),
                 latitude=raw_data.get("latitude"),
                 longitude=raw_data.get("longitude"),
             ),
