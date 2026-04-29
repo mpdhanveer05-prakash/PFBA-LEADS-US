@@ -63,7 +63,7 @@ class PhillyCountyScraper(BaseCountyScraper):
                     _API,
                     params={
                         "$select": "parcel_number,location,zip_code,market_value,taxable_land,taxable_building,year_built,total_livable_area,owner_1,owner_2,number_of_bedrooms,number_of_bathrooms,category_code_description,mailing_address_1,mailing_address_2,mailing_care_of,mailing_city_state,mailing_zip",
-                        "$where": "market_value>'300000' AND location IS NOT NULL",
+                        "$where": "market_value > 300000",
                         "$order": "market_value DESC",
                         "$limit": page_size,
                         "$offset": offset,

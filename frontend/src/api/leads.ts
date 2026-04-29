@@ -23,6 +23,7 @@ export interface LeadListItem {
   isVerified: boolean
   verifiedBy: string | null
   verifiedAt: string | null
+  hasContact: boolean
 }
 
 export interface LeadDetail extends LeadListItem {

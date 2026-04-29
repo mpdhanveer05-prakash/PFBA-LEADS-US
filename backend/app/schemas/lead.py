@@ -55,6 +55,7 @@ class LeadListItem(BaseModel):
     is_verified: bool = False
     verified_by: str | None = None
     verified_at: datetime | None = None
+    has_contact: bool = False
 
 
 class LeadDetail(LeadListItem):

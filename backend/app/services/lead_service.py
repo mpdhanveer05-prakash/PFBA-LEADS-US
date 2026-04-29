@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import select, func, desc, asc
+from sqlalchemy import select, func, desc, asc, case, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.assessment import Assessment
@@ -41,6 +41,18 @@ class LeadService:
         min_appeal_probability: float | None = None,
         data_source: str | None = None,
     ) -> tuple[int, list[dict]]:
+        _has_contact = case(
+            (
+                or_(
+                    Property.owner_name.isnot(None),
+                    Property.owner_email.isnot(None),
+                    Property.owner_phone.isnot(None),
+                ),
+                True,
+            ),
+            else_=False,
+        ).label("has_contact")
+
         base_q = (
             select(
                 LeadScore.id,
@@ -62,6 +74,7 @@ class LeadService:
                 LeadScore.is_verified,
                 LeadScore.verified_by,
                 LeadScore.verified_at,
+                _has_contact,
             )
             .join(Property, LeadScore.property_id == Property.id)
             .join(County, Property.county_id == County.id)

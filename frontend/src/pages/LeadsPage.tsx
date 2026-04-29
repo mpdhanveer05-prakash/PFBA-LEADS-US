@@ -97,6 +97,12 @@ function buildColumns(
       cell: (i) => i.getValue() ? <span className="text-green-700 font-medium">{fmt.format(Number(i.getValue()))}</span> : '—',
     }),
     col.accessor('deadlineDate', { header: 'Deadline', cell: (i) => <DeadlineBadge date={i.getValue()} /> }),
+    col.accessor('hasContact', {
+      header: 'Contact',
+      cell: (i) => i.getValue()
+        ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✓ Available</span>
+        : <span className="inline-flex items-center gap-1 text-xs text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">— Not Available</span>,
+    }),
   ]
 }
 
