@@ -1,0 +1,6 @@
+name,email,phone,address,apn
+James Smith,james.smith42@gmail.com,,(replace with real data from generate_test_dnc.py),
+Mary Johnson,,5129871234,,TX-001-0023-45
+Robert Williams,,,123 Oak Dr Austin TX,
+Michael Davis,,,(replace address),TR-045-7812-33
+Patricia Brown,patricia.brown91@yahoo.com,,,

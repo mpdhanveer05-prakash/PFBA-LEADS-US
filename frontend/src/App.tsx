@@ -9,6 +9,7 @@ import CountiesPage from './pages/CountiesPage'
 import AppealsPage from './pages/AppealsPage'
 import OutreachPage from './pages/OutreachPage'
 import AppealPacketsPage from './pages/AppealPacketsPage'
+import DNCPage from './pages/DNCPage'
 import LoginPage from './pages/LoginPage'
 import { useAuth } from './hooks/useAuth'
 import { ToastProvider } from './components/Toast'
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/appeals" element={<AppealsPage />} />
           <Route path="/outreach" element={<OutreachPage />} />
           <Route path="/packets" element={<AppealPacketsPage />} />
+          <Route path="/dnc" element={<DNCPage />} />
         </Route>
       </Routes>
     </ToastProvider>

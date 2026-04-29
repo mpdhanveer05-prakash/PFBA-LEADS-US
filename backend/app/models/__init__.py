@@ -6,6 +6,7 @@ from app.models.lead_score import LeadScore, PriorityTier
 from app.models.appeal import Appeal, AppealStatus
 from app.models.outreach_campaign import OutreachCampaign, CampaignStatus
 from app.models.appeal_packet import AppealPacket
+from app.models.dnc_list import DncList, DncEntry
 
 __all__ = [
     "County",
@@ -19,4 +20,6 @@ __all__ = [
     "OutreachCampaign",
     "CampaignStatus",
     "AppealPacket",
+    "DncList",
+    "DncEntry",
 ]

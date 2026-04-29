@@ -81,6 +81,8 @@ class LeadService:
             .join(Assessment, LeadScore.assessment_id == Assessment.id)
         )
 
+        base_q = base_q.where(Property.is_dnc == False)
+
         if tier_filter:
             base_q = base_q.where(LeadScore.priority_tier.in_(tier_filter))
         if county_id:

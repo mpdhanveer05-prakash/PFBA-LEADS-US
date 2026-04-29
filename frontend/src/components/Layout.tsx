@@ -11,6 +11,7 @@ const NAV = [
   { to: '/appeals', label: 'Appeals', icon: '◷' },
   { to: '/outreach', label: 'Outreach', icon: '✉' },
   { to: '/packets', label: 'Appeal Packets', icon: '⬡' },
+  { to: '/dnc', label: 'DNC', icon: '⊘' },
 ]
 
 export default function Layout() {

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Integer, Float, DateTime, ForeignKey, Index, func
+from sqlalchemy import Boolean, String, Integer, Float, DateTime, ForeignKey, Index, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -28,6 +28,11 @@ class Property(Base):
     owner_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
     owner_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     mailing_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    is_dnc: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    dnc_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    dnc_list_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("dnc_lists.id", ondelete="SET NULL"), nullable=True
+    )
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.api import health, leads, counties, dashboard, appeals, auth, operations, sync, ai, outreach, appeal_packets
+from app.api import health, leads, counties, dashboard, appeals, auth, operations, sync, ai, outreach, appeal_packets, dnc
 from app.scheduler import lifespan
 
 if settings.sentry_dsn:
@@ -48,3 +48,4 @@ app.include_router(sync.router, prefix="/api", tags=["sync"])
 app.include_router(ai.router, prefix="/api", tags=["ai"])
 app.include_router(outreach.router, prefix="/api", tags=["outreach"])
 app.include_router(appeal_packets.router, prefix="/api", tags=["appeal_packets"])
+app.include_router(dnc.router, prefix="/api", tags=["dnc"])

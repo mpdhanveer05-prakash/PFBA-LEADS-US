@@ -43,6 +43,7 @@ sentry-sdk[fastapi]==2.3.1
 apscheduler==3.10.4
 
 # Lightweight data handling (no pandas/numpy)
+openpyxl==3.1.2
 # Testing
 pytest==8.2.0
 pytest-asyncio==0.23.6

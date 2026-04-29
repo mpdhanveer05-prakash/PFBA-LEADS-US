@@ -28,6 +28,7 @@ class DashboardService:
         base_q = (
             select(LeadScore.id)
             .join(Property, LeadScore.property_id == Property.id)
+            .where(Property.is_dnc == False)
         )
         base_q = self._apn_filter(base_q, data_source)
         filtered_ids = self._db.execute(base_q).scalars().all()
