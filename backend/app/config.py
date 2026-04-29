@@ -17,7 +17,9 @@ class Settings(BaseSettings):
 
     sentry_dsn: str = ""
     slack_webhook_url: str = ""
-    groq_api_key: str = ""
+    gemini_api_key: str = ""    # PRIMARY — Google Gemini 2.0 Flash, free at aistudio.google.com/apikey
+    groq_api_key: str = ""      # FALLBACK — Llama 3.3 70B, free at console.groq.com
+    zhipu_api_key: str = ""     # FALLBACK — GLM-4-Flash, free at open.bigmodel.cn
 
     # DB pool
     db_pool_size: int = 20

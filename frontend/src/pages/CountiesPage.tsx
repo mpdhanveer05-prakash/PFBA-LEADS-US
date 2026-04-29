@@ -15,6 +15,8 @@ const REAL_SCRAPERS = new Set([
   'san_diego_ca', 'los_angeles_ca', 'orange_ca', 'riverside_ca', 'santa_clara_ca',
   // Other states
   'cook_il', 'king_wa', 'maricopa_az', 'clark_nv', 'fulton_ga', 'mecklenburg_nc', 'wake_nc',
+  // Socrata verified
+  'ny_nyc', 'ca_sf', 'pa_philly',
 ])
 
 const SEC_PER_RECORD: Record<string, number> = {

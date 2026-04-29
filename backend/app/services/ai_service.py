@@ -1,6 +1,9 @@
 """
-Groq-powered AI service (free tier — llama-3.3-70b-versatile).
-Set GROQ_API_KEY in .env.  Sign up at https://console.groq.com (no credit card needed).
+Google Gemini 2.0 Flash AI service (free tier).
+Get a free API key at https://aistudio.google.com/apikey — no credit card needed.
+Set GEMINI_API_KEY in .env.
+
+Free limits: 1,500 requests/day · 1,000,000 tokens/min · 15 RPM
 """
 from __future__ import annotations
 
@@ -13,17 +16,47 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-_MODEL = "llama-3.3-70b-versatile"
+_GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+_MODEL = "gemini-2.0-flash"
 
 
 def _chat(messages: list[dict], temperature: float = 0.3, max_tokens: int = 2048) -> str:
-    if not settings.groq_api_key:
-        raise RuntimeError("GROQ_API_KEY is not configured. Add it to your .env file.")
+    api_key = settings.gemini_api_key or settings.groq_api_key or settings.zhipu_api_key
+    if not api_key:
+        raise RuntimeError(
+            "No AI API key configured. "
+            "Get a free Gemini key at https://aistudio.google.com/apikey "
+            "and set GEMINI_API_KEY in your .env file."
+        )
+
+    # If using Gemini key, use Gemini endpoint
+    if settings.gemini_api_key:
+        url = _GEMINI_URL
+        model = _MODEL
+        key = settings.gemini_api_key
+    # Fallback to Groq if configured
+    elif settings.groq_api_key:
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        model = "llama-3.3-70b-versatile"
+        key = settings.groq_api_key
+    # Fallback to ZhipuAI if configured
+    else:
+        url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+        model = "glm-4-flash"
+        key = settings.zhipu_api_key
+
     resp = httpx.post(
-        _GROQ_URL,
-        headers={"Authorization": f"Bearer {settings.groq_api_key}", "Content-Type": "application/json"},
-        json={"model": _MODEL, "messages": messages, "temperature": temperature, "max_tokens": max_tokens},
+        url,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        },
         timeout=30,
     )
     resp.raise_for_status()
@@ -100,21 +133,20 @@ Query: "{query}"
 
 Return a JSON object with ONLY the fields that are clearly specified:
 {{
-  "tier": ["A"],                        // array of tier letters
-  "county_name": "Travis",              // exact name from available counties
-  "property_type": "RESIDENTIAL",       // exact type
-  "min_gap_pct": 0.15,                  // minimum over-assessment as decimal
-  "min_estimated_savings": 5000,        // minimum annual savings in dollars
-  "min_appeal_probability": 0.6,        // minimum probability as decimal
-  "sort_by": "estimated_savings",       // field to sort by
-  "sort_dir": "desc",                   // asc or desc
+  "tier": ["A"],
+  "county_name": "Travis",
+  "property_type": "RESIDENTIAL",
+  "min_gap_pct": 0.15,
+  "min_estimated_savings": 5000,
+  "min_appeal_probability": 0.6,
+  "sort_by": "estimated_savings",
+  "sort_dir": "desc",
   "interpretation": "Tier A residential properties in Travis County over-assessed by more than 15%"
 }}
 
 Return ONLY valid JSON. No explanation, no markdown."""
 
     raw = _chat([{"role": "user", "content": prompt}], temperature=0.1, max_tokens=400)
-    # Strip possible markdown code fences
     raw = raw.strip()
     if raw.startswith("```"):
         raw = raw.split("```")[1]
