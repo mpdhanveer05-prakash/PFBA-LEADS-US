@@ -69,6 +69,10 @@ class ScoringService:
         )
 
         market_value = self._estimate_market_value(prop, comps)
+        used_comps = market_value is not None
+        if market_value is None:
+            market_value = self._fallback_market_value(prop, county, assessment)
+
         assessed = float(assessment.assessed_total)
 
         if market_value and assessed > 0:
@@ -89,6 +93,13 @@ class ScoringService:
             LeadScore.__table__.delete().where(LeadScore.assessment_id == assessment_id)
         )
 
+        if self._model:
+            mv = "xgboost-v1"
+        elif used_comps:
+            mv = "rule-based-comps-v1"
+        else:
+            mv = "rule-based-no-comps-v1"
+
         score = LeadScore(
             property_id=prop.id,
             assessment_id=assessment_id,
@@ -99,7 +110,7 @@ class ScoringService:
             estimated_savings=estimated_savings,
             priority_tier=tier,
             shap_explanation=shap,
-            model_version="xgboost-v1" if self._model else "rule-based-v1",
+            model_version=mv,
         )
         self._db.add(score)
         self._db.flush()
@@ -113,6 +124,36 @@ class ScoringService:
         if not prices or not prop.building_sqft:
             return None
         return statistics.median(prices) * prop.building_sqft
+
+    def _fallback_market_value(self, prop, county, assessment) -> float | None:
+        """Estimate market value without comps using assessed-value brackets and age."""
+        assessed = float(assessment.assessed_total or 0)
+        if assessed <= 0:
+            return None
+
+        # Over-assessment tends to be larger for higher-value properties
+        if assessed >= 2_000_000:
+            base_gap = 0.22
+        elif assessed >= 1_000_000:
+            base_gap = 0.18
+        elif assessed >= 500_000:
+            base_gap = 0.15
+        else:
+            base_gap = 0.12
+
+        # Older buildings drift further from market value
+        if prop.year_built:
+            age = 2024 - int(prop.year_built)
+            if age > 30:
+                base_gap += 0.03
+            elif age > 15:
+                base_gap += 0.01
+
+        # Counties with higher historical approval → systemic over-assessment
+        approval_boost = float(county.approval_rate_hist or 0.30) * 0.10
+        gap_pct = min(base_gap + approval_boost, 0.40)
+
+        return assessed * (1.0 - gap_pct)
 
     def _predict(self, prop, county, assessment, comps, gap_pct) -> tuple[float, dict]:
         features = {
@@ -145,8 +186,16 @@ class ScoringService:
 
     @staticmethod
     def _rule_based(gap_pct: float, features: dict) -> tuple[float, dict]:
-        """Simple rule-based probability estimate when model unavailable."""
-        prob = min(max(gap_pct * 2.5 + features["county_approval_rate"] * 0.3, 0.05), 0.95)
+        """Rule-based probability estimate when XGBoost model is unavailable."""
+        # Gap size is the strongest predictor; county approval rate adds baseline lift
+        # Larger buildings have slightly higher success rates (more at stake)
+        sqft_boost = 0.05 if features.get("building_sqft", 0) > 2000 else 0.0
+        prob = min(max(
+            gap_pct * 3.5
+            + features["county_approval_rate"] * 0.5
+            + sqft_boost,
+            0.05,
+        ), 0.95)
         return prob, {k: 0.0 for k in features}
 
     @staticmethod

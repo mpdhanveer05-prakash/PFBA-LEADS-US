@@ -44,8 +44,8 @@ def _run_scrape(county_id: str) -> None:
         db.close()
 
 
-def _run_scoring(county_id: str | None = None) -> None:
-    from sqlalchemy import select
+def _run_scoring(county_id: str | None = None, force: bool = False) -> None:
+    from sqlalchemy import select, delete
     from app.models.assessment import Assessment
     from app.models.lead_score import LeadScore
     from app.models.property import Property
@@ -54,6 +54,23 @@ def _run_scoring(county_id: str | None = None) -> None:
     db = SessionLocal()
     try:
         svc = ScoringService(db)
+
+        if force:
+            # Wipe existing lead scores so all assessments are re-evaluated
+            if county_id:
+                sub = (
+                    select(Assessment.id)
+                    .join(Property, Assessment.property_id == Property.id)
+                    .where(Property.county_id == uuid.UUID(county_id))
+                )
+                db.execute(
+                    delete(LeadScore).where(LeadScore.assessment_id.in_(sub))
+                )
+            else:
+                db.execute(delete(LeadScore))
+            db.commit()
+            logger.info("Force-rescore: cleared existing lead_scores")
+
         q = select(Assessment.id).where(
             ~Assessment.id.in_(select(LeadScore.assessment_id))
         )
@@ -112,7 +129,12 @@ def scoring_status(
 def trigger_scoring(
     background_tasks: BackgroundTasks,
     county_id: uuid.UUID | None = None,
+    force: bool = False,
     _: TokenData = Depends(require_role("admin", "manager")),
 ):
-    background_tasks.add_task(_run_scoring, str(county_id) if county_id else None)
-    return {"status": "running"}
+    background_tasks.add_task(
+        _run_scoring,
+        str(county_id) if county_id else None,
+        force,
+    )
+    return {"status": "running", "force": force}

@@ -93,7 +93,20 @@ def _run_full_sync(job_id: str, county_id: str, count: int) -> None:
         job.records_seeded = records_scraped
         db.commit()
 
-        # ── score new assessments ─────────────────────────────────────────────
+        # ── score assessments (re-score existing leads to apply latest formula) ──
+        from sqlalchemy import delete
+        sub_county_assessments = (
+            select(Assessment.id)
+            .join(Property, Assessment.property_id == Property.id)
+            .where(Property.county_id == uuid.UUID(county_id))
+        )
+        db.execute(
+            delete(LeadScore).where(
+                LeadScore.assessment_id.in_(sub_county_assessments)
+            )
+        )
+        db.commit()
+
         svc = ScoringService(db)
         q = select(Assessment.id).where(
             ~Assessment.id.in_(select(LeadScore.assessment_id))

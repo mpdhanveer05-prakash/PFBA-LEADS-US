@@ -155,7 +155,7 @@ export default function DashboardPage() {
   async function handleScore() {
     setScoring(true)
     try {
-      await triggerScoring()
+      await triggerScoring(undefined, true)  // force=true re-scores existing tier-D leads
       addToast('Scoring queued — leads update in ~30s', 'success')
       setTimeout(() => fetchDashboardStats().then(setStats).catch(() => {}), 35000)
     } catch {

@@ -220,7 +220,7 @@ export default function CountiesPage() {
   async function handleScoreAll() {
     setBusy('score')
     try {
-      await triggerScoring()
+      await triggerScoring(undefined, true)  // force=true re-scores all, including existing tier-D
       // Navigate to Leads page immediately; it will poll until scoring finishes
       navigate('/leads?scoring=1')
     } catch {

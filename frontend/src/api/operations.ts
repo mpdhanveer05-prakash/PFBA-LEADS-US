@@ -18,8 +18,11 @@ export async function triggerScrape(countyId: string): Promise<void> {
 }
 
 
-export async function triggerScoring(countyId?: string): Promise<void> {
+export async function triggerScoring(countyId?: string, force = false): Promise<void> {
   await api.post('/scoring/run', null, {
-    params: countyId ? { county_id: countyId } : {},
+    params: {
+      ...(countyId ? { county_id: countyId } : {}),
+      force,
+    },
   })
 }
