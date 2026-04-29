@@ -27,6 +27,7 @@ class Property(Base):
     owner_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     owner_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
     owner_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    mailing_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

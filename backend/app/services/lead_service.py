@@ -117,6 +117,7 @@ class LeadService:
                 Property.owner_name,
                 Property.owner_email,
                 Property.owner_phone,
+                Property.mailing_address,
                 County.name.label("county_name"),
                 Assessment.assessed_total,
             )
@@ -132,7 +133,7 @@ class LeadService:
         (
             lead_score, address, city, state, zip_code, property_type,
             apn, building_sqft, lot_size_sqft, year_built, bedrooms, bathrooms,
-            owner_name, owner_email, owner_phone,
+            owner_name, owner_email, owner_phone, mailing_address,
             county_name, assessed_total,
         ) = row
 
@@ -168,6 +169,7 @@ class LeadService:
             "owner_name": owner_name,
             "owner_email": owner_email,
             "owner_phone": owner_phone,
+            "mailing_address": mailing_address,
             "assessed_total": assessed_total,
             "market_value_est": lead_score.market_value_est,
             "gap_pct": lead_score.gap_pct,

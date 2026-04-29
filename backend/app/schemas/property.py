@@ -23,6 +23,7 @@ class PropertyCreate(PropertyBase):
     owner_name: str | None = None
     owner_email: str | None = None
     owner_phone: str | None = None
+    mailing_address: str | None = None
     latitude: float | None = None
     longitude: float | None = None
 

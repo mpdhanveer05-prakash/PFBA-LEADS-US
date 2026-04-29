@@ -73,6 +73,7 @@ class LeadDetail(LeadListItem):
     owner_name: str | None = None
     owner_email: str | None = None
     owner_phone: str | None = None
+    mailing_address: str | None = None
 
     # Scoring details
     assessment_gap: Decimal | None

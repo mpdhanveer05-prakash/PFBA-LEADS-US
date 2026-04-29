@@ -282,24 +282,31 @@ export default function VerificationPage() {
                     <div className="pt-4 grid grid-cols-3 gap-6">
                       {/* Owner + Property */}
                       <div className="space-y-4">
-                        {(expanded.data.ownerName || expanded.data.ownerEmail || expanded.data.ownerPhone) && (
-                          <div>
-                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Owner Contact</p>
-                            <div className="space-y-1">
-                              {expanded.data.ownerName && <p className="text-sm font-medium text-gray-900">{expanded.data.ownerName}</p>}
-                              {expanded.data.ownerEmail && (
-                                <a href={`mailto:${expanded.data.ownerEmail}`} className="block text-sm text-blue-600 hover:underline truncate">
-                                  {expanded.data.ownerEmail}
-                                </a>
-                              )}
-                              {expanded.data.ownerPhone && (
-                                <a href={`tel:${expanded.data.ownerPhone}`} className="block text-sm text-blue-600 hover:underline">
-                                  {expanded.data.ownerPhone}
-                                </a>
-                              )}
-                            </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Owner Contact</p>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              {expanded.data.ownerName || <span className="text-gray-400 italic font-normal">Name not in public records</span>}
+                            </p>
+                            {expanded.data.mailingAddress && (
+                              <p className="text-sm text-gray-600">📬 {expanded.data.mailingAddress}</p>
+                            )}
+                            {expanded.data.ownerEmail ? (
+                              <a href={`mailto:${expanded.data.ownerEmail}`} className="block text-sm text-blue-600 hover:underline truncate">
+                                {expanded.data.ownerEmail}
+                              </a>
+                            ) : (
+                              <p className="text-xs text-gray-400 italic">No email in public records</p>
+                            )}
+                            {expanded.data.ownerPhone ? (
+                              <a href={`tel:${expanded.data.ownerPhone}`} className="block text-sm text-blue-600 hover:underline">
+                                {expanded.data.ownerPhone}
+                              </a>
+                            ) : (
+                              <p className="text-xs text-gray-400 italic">No phone in public records</p>
+                            )}
                           </div>
-                        )}
+                        </div>
                         <div>
                           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Property</p>
                           <div className="space-y-1 text-sm">

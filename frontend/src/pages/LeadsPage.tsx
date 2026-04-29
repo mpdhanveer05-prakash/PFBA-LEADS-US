@@ -539,33 +539,52 @@ export default function LeadsPage() {
             <div className="px-6 py-5 space-y-6">
 
               {/* Owner Contact */}
-              {(selectedLead.ownerName || selectedLead.ownerEmail || selectedLead.ownerPhone) && (
-                <div className="bg-blue-50 rounded-lg px-4 py-3 space-y-1">
-                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">Owner Contact</p>
-                  {selectedLead.ownerName && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-gray-400 w-5">👤</span>
-                      <span className="font-medium text-gray-900">{selectedLead.ownerName}</span>
-                    </div>
-                  )}
-                  {selectedLead.ownerEmail && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-gray-400 w-5">✉</span>
-                      <a href={`mailto:${selectedLead.ownerEmail}`} className="text-blue-600 hover:underline">
-                        {selectedLead.ownerEmail}
-                      </a>
-                    </div>
-                  )}
-                  {selectedLead.ownerPhone && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-gray-400 w-5">📞</span>
-                      <a href={`tel:${selectedLead.ownerPhone}`} className="text-blue-600 hover:underline">
-                        {selectedLead.ownerPhone}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="bg-blue-50 rounded-lg px-4 py-3 space-y-1">
+                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">Owner Contact</p>
+                {selectedLead.ownerName ? (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400 w-5">👤</span>
+                    <span className="font-medium text-gray-900">{selectedLead.ownerName}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400 w-5">👤</span>
+                    <span className="text-gray-400 italic">Name not in public records</span>
+                  </div>
+                )}
+                {selectedLead.mailingAddress && (
+                  <div className="flex items-start gap-2 text-sm">
+                    <span className="text-gray-400 w-5 mt-0.5">🏠</span>
+                    <span className="text-gray-700">{selectedLead.mailingAddress}</span>
+                  </div>
+                )}
+                {selectedLead.ownerEmail ? (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400 w-5">✉</span>
+                    <a href={`mailto:${selectedLead.ownerEmail}`} className="text-blue-600 hover:underline">
+                      {selectedLead.ownerEmail}
+                    </a>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400 w-5">✉</span>
+                    <span className="text-gray-400 italic text-xs">Email not available in public records</span>
+                  </div>
+                )}
+                {selectedLead.ownerPhone ? (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400 w-5">📞</span>
+                    <a href={`tel:${selectedLead.ownerPhone}`} className="text-blue-600 hover:underline">
+                      {selectedLead.ownerPhone}
+                    </a>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-400 w-5">📞</span>
+                    <span className="text-gray-400 italic text-xs">Phone not available in public records</span>
+                  </div>
+                )}
+              </div>
 
               {/* Property Details */}
               <div>

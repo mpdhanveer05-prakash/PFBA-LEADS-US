@@ -110,7 +110,7 @@ class CookCountyScraper(BaseCountyScraper):
                 resp = self.fetch(
                     _ADDR_URL,
                     params={
-                        "$select": "pin,property_address,property_city,property_zip,latitude,longitude",
+                        "$select": "pin,property_address,property_city,property_zip,latitude,longitude,taxpayer1,taxpayer2,mail_address,mail_city,mail_state,mail_zip",
                         "$where": f"pin IN ({pin_list}) AND indicator_has_address='1'",
                         "$limit": _BATCH,
                     },
@@ -140,6 +140,21 @@ class CookCountyScraper(BaseCountyScraper):
                 lng = float(raw_lng) if raw_lng else None
         except (TypeError, ValueError):
             pass
+
+        # Owner / taxpayer info
+        tp1 = str(addr.get("taxpayer1") or "").strip().title()
+        tp2 = str(addr.get("taxpayer2") or "").strip().title()
+        owner_name = f"{tp1} & {tp2}" if tp1 and tp2 else (tp1 or tp2 or None)
+
+        # Mailing address
+        mail_parts = [
+            str(addr.get("mail_address") or "").strip(),
+            str(addr.get("mail_city") or "").strip(),
+            str(addr.get("mail_state") or "").strip(),
+            str(addr.get("mail_zip") or "").strip(),
+        ]
+        mailing_address = ", ".join(p for p in mail_parts if p) or None
+
         return {
             "apn": pin,
             "address": address,
@@ -149,7 +164,8 @@ class CookCountyScraper(BaseCountyScraper):
             "property_type": "RESIDENTIAL",
             "building_sqft": None,
             "year_built": None,
-            "owner_name": None,
+            "owner_name": owner_name,
+            "mailing_address": mailing_address,
             "assessed_total": asmt["assessed_total"],
             "assessed_land": asmt.get("assessed_land"),
             "assessed_improvement": asmt.get("assessed_improvement"),
@@ -174,6 +190,7 @@ class CookCountyScraper(BaseCountyScraper):
                 building_sqft=raw_data.get("building_sqft"),
                 year_built=raw_data.get("year_built"),
                 owner_name=raw_data.get("owner_name"),
+                mailing_address=raw_data.get("mailing_address"),
                 latitude=raw_data.get("latitude"),
                 longitude=raw_data.get("longitude"),
             ),

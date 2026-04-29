@@ -39,6 +39,7 @@ export interface LeadDetail extends LeadListItem {
   ownerName: string | null
   ownerEmail: string | null
   ownerPhone: string | null
+  mailingAddress: string | null
 
   // Scoring details
   assessmentGap: number | null

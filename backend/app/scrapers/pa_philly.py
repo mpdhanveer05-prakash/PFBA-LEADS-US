@@ -161,6 +161,7 @@ class PhillyCountyScraper(BaseCountyScraper):
                 owner_name=raw_data.get("owner_name"),
                 owner_email=raw_data.get("owner_email"),
                 owner_phone=raw_data.get("owner_phone"),
+                mailing_address=raw_data.get("mailing_address"),
                 latitude=raw_data.get("latitude"),
                 longitude=raw_data.get("longitude"),
             ),
