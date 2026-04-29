@@ -103,21 +103,7 @@ class LeadService:
         row = self._db.execute(
             select(
                 LeadScore,
-                Property.address,
-                Property.city,
-                Property.state,
-                Property.zip,
-                Property.property_type,
-                Property.apn,
-                Property.building_sqft,
-                Property.lot_size_sqft,
-                Property.year_built,
-                Property.bedrooms,
-                Property.bathrooms,
-                Property.owner_name,
-                Property.owner_email,
-                Property.owner_phone,
-                Property.mailing_address,
+                Property,
                 County.name.label("county_name"),
                 Assessment.assessed_total,
             )
@@ -130,12 +116,22 @@ class LeadService:
         if not row:
             return None
 
-        (
-            lead_score, address, city, state, zip_code, property_type,
-            apn, building_sqft, lot_size_sqft, year_built, bedrooms, bathrooms,
-            owner_name, owner_email, owner_phone, mailing_address,
-            county_name, assessed_total,
-        ) = row
+        lead_score, prop, county_name, assessed_total = row
+        address = prop.address
+        city = prop.city
+        state = prop.state
+        zip_code = prop.zip
+        property_type = prop.property_type
+        apn = prop.apn
+        building_sqft = prop.building_sqft
+        lot_size_sqft = prop.lot_size_sqft
+        year_built = prop.year_built
+        bedrooms = prop.bedrooms
+        bathrooms = prop.bathrooms
+        owner_name = prop.owner_name
+        owner_email = prop.owner_email
+        owner_phone = prop.owner_phone
+        mailing_address = getattr(prop, "mailing_address", None)
 
         comps = self._db.execute(
             select(ComparableSale)
