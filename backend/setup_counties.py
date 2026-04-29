@@ -61,10 +61,7 @@ COUNTIES = [
 def main() -> None:
     db = SessionLocal()
     try:
-        existing = {
-            row.scraper_adapter
-            for row in db.execute(select(County.scraper_adapter)).scalars().all()
-        }
+        existing = set(db.execute(select(County.scraper_adapter)).scalars().all())
         added = 0
         for c in COUNTIES:
             if c["scraper_adapter"] in existing:
