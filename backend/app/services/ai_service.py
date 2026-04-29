@@ -122,6 +122,20 @@ Write only the letter, starting with the date line."""
 
 
 def parse_nl_search(query: str, county_names: list[str]) -> dict:
+    """
+    Parse a natural-language search query into structured filters.
+    Uses AI when an API key is configured; falls back to rule-based parsing otherwise.
+    """
+    api_key = settings.gemini_api_key or settings.groq_api_key or settings.zhipu_api_key
+    if api_key:
+        try:
+            return _parse_nl_with_ai(query, county_names)
+        except Exception as e:
+            logger.warning("AI NL search failed (%s), falling back to rule-based parser", e)
+    return _parse_nl_rules(query, county_names)
+
+
+def _parse_nl_with_ai(query: str, county_names: list[str]) -> dict:
     county_list = ", ".join(county_names[:20])
     prompt = f"""Convert this property search query into structured JSON filters.
 
@@ -153,3 +167,108 @@ Return ONLY valid JSON. No explanation, no markdown."""
         if raw.startswith("json"):
             raw = raw[4:]
     return json.loads(raw.strip())
+
+
+def _parse_nl_rules(query: str, county_names: list[str]) -> dict:
+    """
+    Rule-based NL parser — no API key required.
+    Handles tiers, property types, gap %, savings, probability, county names, sort intent.
+    """
+    import re
+    q = query.lower()
+    result: dict = {}
+    notes: list[str] = []
+
+    # ── Tiers ────────────────────────────────────────────────────────────────
+    tiers = re.findall(r'\btier\s*([abcd])\b', q)
+    # also catch bare "A leads", "B and C"
+    tiers += re.findall(r'\b([abcd])\s*(?:tier|leads?|priority)\b', q)
+    tiers += re.findall(r'\b([abcd])\s*(?:and|&|,)\s*([abcd])\b', q)
+    tiers = sorted({t.upper() for t in sum([[x] if isinstance(x, str) else list(x) for x in tiers], [])})
+    if tiers:
+        result["tier"] = tiers
+        notes.append(f"Tier {'/'.join(tiers)}")
+
+    # ── Property type ────────────────────────────────────────────────────────
+    if any(w in q for w in ("residential", "home", "house", "single family", "sfr")):
+        result["property_type"] = "RESIDENTIAL"
+        notes.append("Residential")
+    elif any(w in q for w in ("commercial", "office", "retail", "business")):
+        result["property_type"] = "COMMERCIAL"
+        notes.append("Commercial")
+    elif any(w in q for w in ("industrial", "warehouse", "manufacturing")):
+        result["property_type"] = "INDUSTRIAL"
+        notes.append("Industrial")
+
+    # ── Gap % ────────────────────────────────────────────────────────────────
+    gap_match = re.search(r'(?:over.?assess|gap|over.?valued?|above market)[^\d]*(\d+(?:\.\d+)?)\s*%', q)
+    if not gap_match:
+        gap_match = re.search(r'(\d+(?:\.\d+)?)\s*%\s*(?:over.?assess|gap|over.?valued?|above)', q)
+    if not gap_match:
+        # "more than 15%", "at least 20%", "over 10%"
+        gap_match = re.search(r'(?:more than|at least|over|above|greater than|>)\s*(\d+(?:\.\d+)?)\s*%', q)
+    if gap_match:
+        result["min_gap_pct"] = float(gap_match.group(1)) / 100
+        notes.append(f"Gap ≥ {gap_match.group(1)}%")
+
+    # ── Min savings ──────────────────────────────────────────────────────────
+    savings_match = re.search(r'\$\s*(\d[\d,]*)\s*(?:savings?|save|per year|annual)', q)
+    if not savings_match:
+        savings_match = re.search(r'(?:savings?|save)\s*(?:of|over|above|more than)?\s*\$?\s*(\d[\d,]*)', q)
+    if savings_match:
+        result["min_estimated_savings"] = int(savings_match.group(1).replace(",", ""))
+        notes.append(f"Savings ≥ ${result['min_estimated_savings']:,}")
+
+    # ── Min probability ──────────────────────────────────────────────────────
+    prob_match = re.search(r'(?:prob(?:ability)?|chance|likelihood|confidence)[^\d]*(\d+(?:\.\d+)?)\s*%?', q)
+    if prob_match:
+        val = float(prob_match.group(1))
+        result["min_appeal_probability"] = val / 100 if val > 1 else val
+        notes.append(f"Prob ≥ {int(val)}%")
+
+    # ── County ───────────────────────────────────────────────────────────────
+    q_words = q.replace(",", " ").split()
+    county_lower = {c.lower(): c for c in county_names}
+    for name_lower, name_orig in county_lower.items():
+        first_word = name_lower.split()[0]
+        if first_word in q_words or name_lower in q:
+            result["county_name"] = name_orig
+            notes.append(f"{name_orig} county")
+            break
+
+    # ── Sort intent ──────────────────────────────────────────────────────────
+    if any(w in q for w in ("highest savings", "most savings", "best savings", "top savings", "biggest savings")):
+        result["sort_by"] = "estimated_savings"
+        result["sort_dir"] = "desc"
+        notes.append("sorted by savings ↓")
+    elif any(w in q for w in ("lowest savings", "least savings", "smallest savings")):
+        result["sort_by"] = "estimated_savings"
+        result["sort_dir"] = "asc"
+        notes.append("sorted by savings ↑")
+    elif any(w in q for w in ("highest probability", "best probability", "most likely", "best chance", "highest chance")):
+        result["sort_by"] = "appeal_probability"
+        result["sort_dir"] = "desc"
+        notes.append("sorted by probability ↓")
+    elif any(w in q for w in ("biggest gap", "highest gap", "most over", "largest gap")):
+        result["sort_by"] = "gap_pct"
+        result["sort_dir"] = "desc"
+        notes.append("sorted by gap ↓")
+    elif any(w in q for w in ("newest", "recent", "latest")):
+        result["sort_by"] = "scored_at"
+        result["sort_dir"] = "desc"
+        notes.append("sorted by newest")
+    elif any(w in q for w in ("urgent", "deadline", "expir")):
+        result["sort_by"] = "appeal_deadline_days"
+        result["sort_dir"] = "asc"
+        notes.append("sorted by deadline ↑")
+
+    # ── Urgency shorthand ────────────────────────────────────────────────────
+    if any(w in q for w in ("urgent", "deadline", "expiring soon", "due soon")):
+        if "sort_by" not in result:
+            result["sort_by"] = "appeal_deadline_days"
+            result["sort_dir"] = "asc"
+
+    result["interpretation"] = (
+        "Showing: " + ", ".join(notes) if notes else f'Keyword search: "{query}"'
+    )
+    return result
