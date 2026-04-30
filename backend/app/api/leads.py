@@ -112,6 +112,46 @@ def list_leads(
     )
 
 
+@router.get("/leads/export")
+def export_leads(
+    db: Session = Depends(get_db),
+    _: TokenData = Depends(get_current_user),
+    mode: str = Query("all", pattern="^(all|verified)$"),
+    tier: list[PriorityTier] | None = Query(None),
+    data_source: str | None = Query(None, pattern="^(live|generated)$"),
+):
+    svc = LeadService(db)
+    rows = list(svc.export_leads_bulk(
+        verified_only=(mode == "verified"),
+        tier_filter=tier or None,
+        data_source=data_source,
+    ))
+
+    if not rows:
+        output = io.StringIO()
+        output.write("No records found\n")
+        output.seek(0)
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=leads_export.csv"},
+        )
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=list(rows[0].keys()))
+    writer.writeheader()
+    writer.writerows(rows)
+    output.seek(0)
+
+    from datetime import date
+    filename = f"leads_{mode}_{date.today().isoformat()}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @router.get("/leads/{lead_id}", response_model=LeadDetail)
 def get_lead(lead_id: uuid.UUID, db: Session = Depends(get_db), _: TokenData = Depends(get_current_user)):
     svc = LeadService(db)

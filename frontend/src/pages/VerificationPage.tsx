@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
-  fetchLeads, fetchLead, verifyLead, unverifyLead,
+  fetchLeads, fetchLead, verifyLead, unverifyLead, exportLeads,
   type LeadListItem, type LeadDetail, type PriorityTier,
 } from '../api/leads'
 import { useAuth } from '../hooks/useAuth'
@@ -77,6 +77,7 @@ export default function VerificationPage() {
   const [dataSource, setDataSource] = useState<'live' | 'generated' | null>(null)
   const [expanded, setExpanded] = useState<ExpandedDetail | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [exportLoading, setExportLoading] = useState<'all' | 'verified' | null>(null)
   const pageSize = 12
 
   const load = useCallback(async () => {
@@ -100,6 +101,18 @@ export default function VerificationPage() {
     if (filterVerified === 'verified') return l.isVerified
     return true
   })
+
+  async function handleExport(mode: 'all' | 'verified') {
+    setExportLoading(mode)
+    try {
+      await exportLeads(mode, {
+        tier: selectedTiers.length ? selectedTiers : undefined,
+        dataSource: dataSource ?? undefined,
+      })
+    } finally {
+      setExportLoading(null)
+    }
+  }
 
   async function toggleExpand(lead: LeadListItem) {
     if (expanded?.leadId === lead.id) {
@@ -136,11 +149,39 @@ export default function VerificationPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Lead Verification</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Review each lead's history, valuation, and property data — then confirm conversion potential.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Lead Verification</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Review each lead's history, valuation, and property data — then confirm conversion potential.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => handleExport('verified')}
+            disabled={exportLoading !== null || verifiedCount === 0}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-green-300 text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-40 transition-colors"
+          >
+            {exportLoading === 'verified' ? (
+              <span className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span>↓</span>
+            )}
+            Export Verified ({verifiedCount})
+          </button>
+          <button
+            onClick={() => handleExport('all')}
+            disabled={exportLoading !== null || total === 0}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 transition-colors"
+          >
+            {exportLoading === 'all' ? (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span>↓</span>
+            )}
+            Export All ({total})
+          </button>
+        </div>
       </div>
 
       {/* Summary bar */}

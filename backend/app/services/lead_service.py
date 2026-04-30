@@ -262,3 +262,99 @@ class LeadService:
             "estimated_savings": str(lead.estimated_savings),
             "priority_tier": lead.priority_tier,
         }
+
+    def export_leads_bulk(
+        self,
+        verified_only: bool = False,
+        tier_filter: list[PriorityTier] | None = None,
+        data_source: str | None = None,
+    ):
+        """
+        Yield one dict per lead for bulk CSV export.
+        Streams directly from the DB — no per-row detail fetches needed.
+        """
+        q = (
+            select(
+                LeadScore.id,
+                LeadScore.priority_tier,
+                LeadScore.appeal_probability,
+                LeadScore.gap_pct,
+                LeadScore.assessment_gap,
+                LeadScore.market_value_est,
+                LeadScore.estimated_savings,
+                LeadScore.model_version,
+                LeadScore.scored_at,
+                LeadScore.is_verified,
+                LeadScore.verified_by,
+                LeadScore.verified_at,
+                Property.apn,
+                Property.address,
+                Property.city,
+                Property.state,
+                Property.zip,
+                Property.property_type,
+                Property.building_sqft,
+                Property.lot_size_sqft,
+                Property.year_built,
+                Property.bedrooms,
+                Property.bathrooms,
+                Property.owner_name,
+                Property.owner_email,
+                Property.owner_phone,
+                County.name.label("county_name"),
+                Assessment.assessed_total,
+                Assessment.assessed_land,
+                Assessment.assessed_improvement,
+                Assessment.tax_amount,
+                Assessment.tax_year,
+            )
+            .join(Property, LeadScore.property_id == Property.id)
+            .join(County, Property.county_id == County.id)
+            .join(Assessment, LeadScore.assessment_id == Assessment.id)
+            .where(Property.is_dnc == False)
+        )
+        if verified_only:
+            q = q.where(LeadScore.is_verified == True)
+        if tier_filter:
+            q = q.where(LeadScore.priority_tier.in_(tier_filter))
+        if data_source == "generated":
+            q = q.where(Property.apn.op("~")(r"^[A-Z]{2}-[0-9]{3}-[0-9]{4}-[0-9]{2}$"))
+        elif data_source == "live":
+            q = q.where(~Property.apn.op("~")(r"^[A-Z]{2}-[0-9]{3}-[0-9]{4}-[0-9]{2}$"))
+        q = q.order_by(desc(LeadScore.appeal_probability))
+
+        for row in self._db.execute(q).mappings():
+            yield {
+                "lead_id": str(row["id"]),
+                "priority_tier": str(row["priority_tier"]),
+                "appeal_probability": f"{(row['appeal_probability'] or 0) * 100:.1f}%",
+                "gap_pct": f"{(row['gap_pct'] or 0) * 100:.1f}%",
+                "assessed_total": str(row["assessed_total"] or ""),
+                "assessed_land": str(row["assessed_land"] or ""),
+                "assessed_improvement": str(row["assessed_improvement"] or ""),
+                "tax_amount": str(row["tax_amount"] or ""),
+                "tax_year": str(row["tax_year"] or ""),
+                "market_value_est": str(row["market_value_est"] or ""),
+                "assessment_gap": str(row["assessment_gap"] or ""),
+                "estimated_savings": str(row["estimated_savings"] or ""),
+                "model_version": row["model_version"] or "",
+                "scored_at": row["scored_at"].isoformat() if row["scored_at"] else "",
+                "is_verified": "Yes" if row["is_verified"] else "No",
+                "verified_by": row["verified_by"] or "",
+                "verified_at": row["verified_at"].isoformat() if row["verified_at"] else "",
+                "apn": row["apn"] or "",
+                "address": row["address"] or "",
+                "city": row["city"] or "",
+                "state": row["state"] or "",
+                "zip": row["zip"] or "",
+                "county": row["county_name"] or "",
+                "property_type": row["property_type"] or "",
+                "building_sqft": str(row["building_sqft"] or ""),
+                "lot_size_sqft": str(row["lot_size_sqft"] or ""),
+                "year_built": str(row["year_built"] or ""),
+                "bedrooms": str(row["bedrooms"] or ""),
+                "bathrooms": str(row["bathrooms"] or ""),
+                "owner_name": row["owner_name"] or "",
+                "owner_email": row["owner_email"] or "",
+                "owner_phone": row["owner_phone"] or "",
+            }

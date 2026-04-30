@@ -147,3 +147,23 @@ export async function verifyLead(id: string, verifiedBy: string): Promise<void> 
 export async function unverifyLead(id: string): Promise<void> {
   await api.post(`/leads/${id}/unverify`)
 }
+
+export async function exportLeads(
+  mode: 'all' | 'verified',
+  opts: { tier?: PriorityTier[]; dataSource?: 'live' | 'generated' } = {},
+): Promise<void> {
+  const params: Record<string, unknown> = { mode }
+  if (opts.tier?.length) params.tier = opts.tier
+  if (opts.dataSource) params.data_source = opts.dataSource
+
+  const resp = await api.get('/leads/export', { params, responseType: 'blob' })
+  const url = URL.createObjectURL(new Blob([resp.data], { type: 'text/csv' }))
+  const a = document.createElement('a')
+  const today = new Date().toISOString().slice(0, 10)
+  a.href = url
+  a.download = `leads_${mode}_${today}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
