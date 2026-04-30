@@ -101,9 +101,15 @@ class LeadService:
         elif data_source == "live":
             base_q = base_q.where(~Property.apn.op("~")(r"^[A-Z]{2}-[0-9]{3}-[0-9]{4}-[0-9]{2}$"))
 
+        sub = base_q.subquery()
         total = self._db.execute(
-            select(func.count()).select_from(base_q.subquery())
+            select(func.count()).select_from(sub)
         ).scalar_one()
+
+        pending_count = self._db.execute(
+            select(func.count()).select_from(sub).where(sub.c.is_verified == False)
+        ).scalar_one()
+        verified_count = total - pending_count
 
         sort_col = _SORT_COLUMNS.get(sort_by, LeadScore.scored_at)
         order = desc(sort_col) if sort_dir == "desc" else asc(sort_col)
@@ -112,7 +118,7 @@ class LeadService:
         ).all()
 
         items = [LeadListItem.model_validate(dict(r._mapping)) for r in rows]
-        return total, items
+        return total, pending_count, verified_count, items
 
     def get_lead_detail(self, lead_id: uuid.UUID) -> LeadDetail | None:
         row = self._db.execute(

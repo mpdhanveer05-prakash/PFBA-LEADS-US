@@ -97,7 +97,7 @@ def list_leads(
     data_source: str | None = Query(None, pattern="^(live|generated)$"),
 ):
     svc = LeadService(db)
-    total, items = svc.list_leads(
+    total, pending_count, verified_count, items = svc.list_leads(
         page=page, page_size=page_size, tier_filter=tier,
         county_id=county_id, property_type=property_type,
         min_gap_pct=min_gap_pct,
@@ -106,7 +106,10 @@ def list_leads(
         sort_by=sort_by, sort_dir=sort_dir,
         data_source=data_source,
     )
-    return PaginatedLeads(total=total, page=page, page_size=page_size, items=items)
+    return PaginatedLeads(
+        total=total, pending_count=pending_count, verified_count=verified_count,
+        page=page, page_size=page_size, items=items,
+    )
 
 
 @router.get("/leads/{lead_id}", response_model=LeadDetail)

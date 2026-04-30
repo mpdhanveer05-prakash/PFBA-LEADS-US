@@ -96,6 +96,8 @@ class LeadVerify(BaseModel):
 
 class PaginatedLeads(BaseModel):
     total: int
+    pending_count: int
+    verified_count: int
     page: int
     page_size: int
     items: list[LeadListItem]

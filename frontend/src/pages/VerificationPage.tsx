@@ -69,6 +69,8 @@ export default function VerificationPage() {
   const { user } = useAuth()
   const [leads, setLeads] = useState<LeadListItem[]>([])
   const [total, setTotal] = useState(0)
+  const [pendingTotal, setPendingTotal] = useState(0)
+  const [verifiedTotal, setVerifiedTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [selectedTiers, setSelectedTiers] = useState<PriorityTier[]>([])
   const [filterVerified, setFilterVerified] = useState<'all' | 'pending' | 'verified'>('all')
@@ -87,6 +89,8 @@ export default function VerificationPage() {
     })
     setLeads(result.items)
     setTotal(result.total)
+    setPendingTotal(result.pendingCount)
+    setVerifiedTotal(result.verifiedCount)
   }, [page, selectedTiers, dataSource])
 
   useEffect(() => { load() }, [load])
@@ -126,8 +130,8 @@ export default function VerificationPage() {
     }
   }
 
-  const pendingCount = leads.filter(l => !l.isVerified).length
-  const verifiedCount = leads.filter(l => l.isVerified).length
+  const pendingCount = pendingTotal
+  const verifiedCount = verifiedTotal
 
   return (
     <div className="p-6">

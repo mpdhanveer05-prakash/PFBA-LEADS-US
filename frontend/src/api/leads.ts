@@ -75,6 +75,8 @@ export interface AssessmentHistoryItem {
 
 export interface PaginatedLeads {
   total: number
+  pendingCount: number
+  verifiedCount: number
   page: number
   pageSize: number
   items: LeadListItem[]
